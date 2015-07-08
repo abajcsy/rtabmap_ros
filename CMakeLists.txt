@@ -216,6 +216,9 @@ target_link_libraries(data_player rtabmap_ros ${QT_LIBRARIES} ${Libraries})
 add_executable(odom_msg_to_tf src/OdomMsgToTFNode.cpp)
 target_link_libraries(odom_msg_to_tf rtabmap_ros ${Libraries})
 
+add_executable(tf_broadcaster src/tf_broadcaster.cpp)
+target_link_libraries(tf_broadcaster ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############

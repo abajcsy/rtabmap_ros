@@ -37,7 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ros/publisher.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <boost/thread.hpp>
+#include <iostream>
 
+using namespace std;
 using namespace rtabmap;
 
 class MapOptimizer
@@ -314,6 +316,7 @@ private:
 
 int main(int argc, char** argv)
 {
+	cout << "GOT TO MAP_OPTIMIZER_NODE\n";
 	ros::init(argc, argv, "map_optimizer");
 	MapOptimizer optimizer;
 	ros::spin();
