@@ -1,0 +1,199 @@
+<launch>
+
+<!-- Choose visualization -->
+<arg name="rviz" default="false" />
+<arg name="rtabmapviz" default="true" />
+
+<!-- Launch the left and right Lifecams -->
+<node name="left" pkg="usb_cam" type="usb_cam_node" output="screen" ns="/stereo_camera">
+    <param name="video_device" value="/dev/video0" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="mjpeg" />
+    <param name="camera_frame_id" value="left" />
+    <param name="io_method" value="mmap"/>
+    <param name="camera_info_url" value="file:///home/humanoid/.ros/camera_info/head_camera.yaml" />
+</node>
+
+<node name="right" pkg="usb_cam" type="usb_cam_node" output="screen" ns="/stereo_camera">
+    <param name="video_device" value="/dev/video1" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="mjpeg" />
+    <param name="camera_frame_id" value="right" />
+    <param name="io_method" value="mmap"/>
+    <param name="camera_info_url" value="file:///home/humanoid/.ros/camera_info/head_camera.yaml" />
+</node>
+
+<node name="left_image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="image" to="/stereo_camera/left/image_raw"/>
+    <param name="autosize" value="true" />
+  </node>
+
+<node name="right_image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="image" to="/stereo_camera/right/image_raw"/>
+    <param name="autosize" value="true" />
+  </node>
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<!--<param name="use_sim_time" type="bool" value="False"/> -->
+
+<!-- Set up static transforms -->
+<arg name="pi/2" value="1.5707963267948966" />
+<arg name="optical_rotate" value="0 0 0 -$(arg pi/2) 0 -$(arg pi/2)" />
+<node pkg="tf" type="static_transform_publisher" name="camera_base_link"
+    args="$(arg optical_rotate) base_link left 100" />  
+
+<!-- tf broadcaster node -->
+<!--<node pkg="rtabmap_ros" type="tf_broadcaster_python.py" name="map_optimizer" />
+<node pkg="rtabmap_ros" type="tf_broadcaster_python2.py" name="stereo_odometry" />-->
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<!-- Run the ROS package stereo_image_proc -->
+<group ns="/stereo_camera" >
+    <node pkg="nodelet" type="nodelet" name="stereo_nodelet" args="manager"/>
+
+    <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
+	<!--<param name="prefilter_size" value="19"/>	
+	<param name="prefilter_cap" value="41"/>
+	<param name="min_disparity" value="0"/>
+	<param name="disparity_range" value="128"/>
+	<param name="uniqueness_ratio" value="26.0"/>
+	<param name="texture_threshold" value="1629"/>
+	<param name="speckle_size" value="188"/>
+	<param name="speckle_range" value="16"/>-->
+    </node>
+</group>
+
+<!-- Stereo Odometry -->
+ <node pkg="rtabmap_ros" type="stereo_odometry" name="stereo_odometry" output="screen" ns="/stereo_camera">
+        <remap from="/stereo_camera/left/image_rect"       to="/stereo_camera/left/image_rect"/>
+        <remap from="/stereo_camera/right/image_rect"      to="/stereo_camera/right/image_rect"/>
+        <remap from="/stereo_camera/left/camera_info"      to="/stereo_camera/left/camera_info"/>
+        <remap from="/stereo_camera/right/camera_info"     to="/stereo_camera/right/camera_info"/>
+	<remap from="/stereo_camera/odom"   to="/stereo_camera/odometry"/>
+
+        <param name="frame_id" type="string" value="base_link"/>
+        <param name="odom_frame_id" type="string" value="odom"/>
+
+        <param name="approx_sync" type="bool" value="true"/>
+        <param name="queue_size" type="int" value="5"/>
+
+        <param name="Odom/InlierDistance" type="string" value="0.1"/>
+        <param name="Odom/MinInliers" type="string" value="10"/>
+        <param name="Odom/RoiRatios" type="string" value="0.03 0.03 0.04 0.04"/>
+        <param name="Odom/MaxDepth" type="string" value="10"/>
+   	<param name="OdomBow/NNDR" type="string" value="0.8"/>
+
+        <param name="GFTT/MaxCorners" type="string" value="500"/>
+        <param name="GFTT/MinDistance" type="string" value="5"/>
+	<param name="Odom/FillInfoData" type="string" value="$(arg rtabmapviz)"/>
+    </node> 
+
+<!-- VISO2_ROS Odometry 
+   <node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer" output="screen">
+      <remap from="stereo" to="/stereo_camera"/>
+      <remap from="image" to="/stereo_camera/image_rect"/>
+      <remap from="odometry" to="stereo_camera/odometry" />
+
+      <param name="base_link_frame_id" value="base_link"/>
+      <param name="odom_frame_id" value="odom"/>
+
+      <param name="approx_sync" type="bool" value="true"/>
+      <param name="ref_frame_change_method" value="1"/>
+      <param name="queue_size" value="30"/>
+   </node>-->
+
+<!-- FOVIS_ROS Odometry 
+  <node pkg="fovis_ros" type="fovis_stereo_odometer" name="stereo_odometer" >
+      <remap from="/stereo_camera/left/image" to="/stereo_camera/left/image_rect" />
+      <remap from="/stereo_camera/right/image" to="/stereo_camera/right/image_rect" />
+      <remap from="/stereo_camera/left/camera_info" to="/stereo_camera/left/camera_info" />
+      <remap from="/stereo_camera/right/camera_info" to="/stereo_camera/right/camera_info" />
+      <remap from="/stereo_camera/odometry" to="/stereo_camera/odometry" />
+
+      <param name="base_link_frame_id" value="base_link"/>
+      <param name="odom_frame_id" value="odom"/>
+
+      <param name="publish_tf" value="true"/>
+      <param name="approx_sync" type="bool" value="true"/>
+   </node>-->
+
+<!-- MOCAP_OPTITRACK Odometry 
+   <node pkg="mocap_optitrack" type="mocap_node" name="mocap_node" respawn="false" launch-prefix="" required="true" output="screen">
+ 	<rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load" />
+	<remap from="/stereo_camera/odometry" to="/stereo_camera/odometry" />
+    </node>-->
+   
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<!-- Run RTAB-Map node -->
+<group ns="rtabmap">   
+  <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
+     <param name="frame_id" type="string" value="base_link"/>
+     <param name="subscribe_stereo" type="bool" value="true"/>
+     <param name="subscribe_depth" type="bool" value="false"/>
+
+     <remap from="left/image_rect" to="/stereo_camera/left/image_rect_color"/>
+     <remap from="right/image_rect" to="/stereo_camera/right/image_rect"/>
+     <remap from="left/camera_info" to="/stereo_camera/left/camera_info"/>
+     <remap from="right/camera_info" to="/stereo_camera/right/camera_info"/>
+
+     <remap from="odom" to="/stereo_camera/odometry"/>
+
+     <param name="queue_size" type="int" value="30"/>
+     <param name="stereo_approx_sync" type="bool" value="true"/>		<!-- NOT SURE IF THIS SHOULD BE HERE -->
+
+     <!-- RTAB-Map's parameters -->
+     <param name="Rtabmap/TimeThr" type="string" value="700"/>
+     <param name="Rtabmap/DetectionRate" type="string" value="1"/>
+
+     <param name="Kp/WordsPerImage" type="string" value="200"/>
+     <param name="Kp/RoiRatios" type="string" value="0.03 0.03 0.04 0.04"/>
+     <param name="Kp/DetectorStrategy" type="string" value="0"/>   <!-- use SURF -->
+     <param name="Kp/NNStrategy" type="string" value="1"/>         <!-- kdTree -->
+
+     <param name="SURF/HessianThreshold" type="string" value="1000"/>
+
+     <param name="LccBow/MaxDepth" type="string" value="5"/>
+     <param name="LccBow/MinInliers" type="string" value="10"/>
+     <param name="LccBow/InlierDistance" type="string" value="0.02"/>
+
+     <param name="LccReextract/Activated" type="string" value="true"/>
+     <param name="LccReextract/MaxWords" type="string" value="500"/>
+
+     <!-- Disable graph optimization because we use map_optimizer node below 
+     <param name="RGBD/OptimizeIterations" type="string" value="0"/> -->
+  </node>
+
+  <!-- Optimizing outside rtabmap node makes it able to optimize always the global map -->
+  <node pkg="rtabmap_ros" type="map_optimizer" name="map_optimizer"/>
+
+  <node if="$(arg rviz)" pkg="rtabmap_ros" type="map_assembler" name="map_assembler">
+     <param name="occupancy_grid" type="bool" value="true"/>
+     <remap from="mapData" to="mapData_optimized"/>
+     <remap from="grid_projection_map" to="/map"/>
+  </node>
+
+  <!-- Visualisation RTAB-Map -->
+  <node if="$(arg rtabmapviz)" pkg="rtabmap_ros" type="rtabmapviz" name="rtabmapviz" args="-d $(find rtabmap_ros)/launch/config/rgbd_gui.ini" output="screen">
+     <param name="subscribe_stereo" type="bool" value="true"/>
+     <param name="subscribe_odom_info" type="bool" value="true"/>
+     <param name="queue_size" type="int" value="10"/>
+     <param name="frame_id" type="string" value="base_link"/>
+     <remap from="left/image_rect" to="/stereo_camera/left/image_rect_color"/>
+     <remap from="right/image_rect" to="/stereo_camera/right/image_rect"/>
+     <remap from="left/camera_info" to="/stereo_camera/left/camera_info"/>
+     <remap from="right/camera_info" to="/stereo_camera/right/camera_info"/>
+     <remap from="odom_info" to="/stereo_camera/odom_info"/>
+     <remap from="odom" to="/stereo_camera/odometry"/>
+     <remap from="mapData" to="mapData_optimized"/>
+  </node>
+ </group>
+
+  <!-- Visualisation RVIZ -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find rtabmap_ros)/launch/config/demo_stereo_outdoor.rviz"/>
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+ </launch>

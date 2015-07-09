@@ -30,6 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <tf2_ros/transform_broadcaster.h>
 #include <rtabmap_ros/MsgConversion.h>
 
+#include <iostream>
+
+using namespace std;
+
 class OdomMsgToTF
 {
 
@@ -85,6 +89,7 @@ private:
 
 int main(int argc, char** argv)
 {
+        cout << "GOT TO ODOM MSG TO TF NODE!";
 	ros::init(argc, argv, "odom_msg_to_tf");
 	OdomMsgToTF odomToTf;
 	ros::spin();

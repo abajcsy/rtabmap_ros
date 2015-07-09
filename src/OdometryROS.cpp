@@ -45,7 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtabmap/utilite/UConversion.h"
 #include "rtabmap/utilite/ULogger.h"
 #include "rtabmap/utilite/UStl.h"
+#include <iostream>
 
+using namespace std;
 using namespace rtabmap;
 
 namespace rtabmap_ros {
@@ -313,6 +315,7 @@ void OdometryROS::processData(const SensorData & data, const std_msgs::Header & 
 	rtabmap::Transform pose = odometry_->process(data, &info);
 	if(!pose.isNull())
 	{
+   		cout << "UPDATING ODOMETRY....\n";
 		//*********************
 		// Update odometry
 		//*********************
@@ -349,6 +352,7 @@ void OdometryROS::processData(const SensorData & data, const std_msgs::Header & 
 			odom.pose.covariance.at(28) = info.variance; // pp
 			odom.pose.covariance.at(35) = info.variance; // yawyaw
 
+			cout << "PUBLISHING ODOMETRY!\n";
 			//publish the message
 			odomPub_.publish(odom);
 		}
